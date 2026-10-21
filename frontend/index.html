@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Compilix — A modern, deployment-friendly online compiler with a LeetCode-inspired user interface and isolated Docker execution." />
+  <title>Compilix — Modern Online Compiler</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+</head>
+<body>
+  <div id="app">
+    <!-- Top Navigation Bar -->
+    <header class="top-nav">
+      <div class="nav-brand-group">
+        <a href="/" class="brand-logo-wrap" title="Compilix Online Compiler">
+          <svg class="brand-icon" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="32" height="32" rx="8" fill="#1e1e1e"/>
+            <rect x="1" y="1" width="30" height="30" rx="7" stroke="#333333" stroke-width="1"/>
+            <path d="M10 11L5 16L10 21" stroke="#00b4d8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M22 11L27 16L22 21" stroke="#00b4d8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18 9L14 23" stroke="#ffa116" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+          <span class="brand-name">Compilix</span>
+        </a>
+        <span class="brand-badge">Online Compiler</span>
+      </div>
+
+      <div class="nav-center-group">
+        <!-- Language Selector -->
+        <div class="lang-select-wrap">
+          <select id="language-select" class="lang-select" aria-label="Select Programming Language">
+            <!-- Dynamically populated -->
+          </select>
+          <span class="lang-select-arrow">▼</span>
+        </div>
+
+        <!-- Run Code Button -->
+        <button id="btn-run-code" class="btn btn-primary" title="Execute program (Ctrl+Enter)">
+          <span id="btn-run-spinner" class="spinner" style="display:none;"></span>
+          <span id="btn-run-icon">▶</span>
+          <span id="btn-run-text">Run</span>
+        </button>
+      </div>
+
+      <div class="nav-actions-group">
+        <!-- Save Status Indicator -->
+        <div class="save-status-wrap" title="Local auto-save status">
+          <span id="save-status-dot" class="status-dot"></span>
+          <span id="save-status-text">Saved</span>
+        </div>
+
+        <!-- Download Button -->
+        <button id="btn-download-code" class="btn btn-secondary btn-sm" title="Download current source code">
+          <span>↓</span>
+          <span>Download</span>
+        </button>
+
+        <!-- Editor Preferences Button -->
+        <button id="btn-editor-settings" class="btn btn-ghost btn-icon-only" title="Editor Preferences">
+          ⚙️
+        </button>
+
+        <!-- Theme Toggle Button -->
+        <button id="btn-theme-toggle" class="btn btn-ghost btn-icon-only" title="Toggle Dark/Light Theme">
+          <span class="theme-icon">☀️</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="main-workspace">
+      <!-- Left Sidebar Information Panel -->
+      <aside class="workspace-sidebar">
+        <div class="sidebar-header">
+          <span>Workspace</span>
+        </div>
+
+        <div class="sidebar-content">
+          <!-- Active File Card -->
+          <div class="sidebar-card">
+            <span class="card-title">Active File</span>
+            <div class="info-row">
+              <span class="info-label">File Name</span>
+              <span id="sidebar-filename" class="info-val">main.cpp</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Language</span>
+              <span id="sidebar-lang-name" class="info-val">C++</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Runtime</span>
+              <span id="sidebar-runtime" class="info-val">GCC (C++17)</span>
+            </div>
+          </div>
+
+          <!-- Environment Health Card -->
+          <div class="sidebar-card">
+            <span class="card-title">Engine Health</span>
+            <div class="info-row">
+              <span class="info-label">Backend API</span>
+              <span id="backend-health-indicator" class="status-badge success">Checking...</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Execution</span>
+              <span id="docker-health-indicator" class="status-badge success">Checking...</span>
+            </div>
+          </div>
+
+          <!-- Code Statistics Card -->
+          <div class="sidebar-card">
+            <span class="card-title">Editor Metrics</span>
+            <div class="info-row">
+              <span class="info-label">Cursor</span>
+              <span id="stats-cursor" class="info-val">Ln 1, Col 1</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Document</span>
+              <span id="stats-counts" class="info-val">0 lines (0 chars)</span>
+            </div>
+          </div>
+
+          <!-- Keyboard Shortcuts Card -->
+          <div class="sidebar-card">
+            <span class="card-title">Shortcuts</span>
+            <div class="info-row">
+              <span class="info-label">Run Code</span>
+              <span class="info-val"><kbd class="shortcut-kbd">Ctrl</kbd> + <kbd class="shortcut-kbd">Enter</kbd></span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Save Code</span>
+              <span class="info-val"><kbd class="shortcut-kbd">Ctrl</kbd> + <kbd class="shortcut-kbd">S</kbd></span>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Right Editor & Console Workspace -->
+      <section class="editor-workspace-wrap">
+        <!-- Editor Section -->
+        <div class="editor-section">
+          <div class="editor-toolbar">
+            <div class="file-tab">
+              <span>📄</span>
+              <span id="current-file-label">main.cpp</span>
+            </div>
+            <div class="editor-actions">
+              <button id="btn-clear-code" class="btn btn-ghost btn-sm" title="Reset code to starter template">
+                ↺ Clear Code
+              </button>
+            </div>
+          </div>
+
+          <!-- Monaco Editor Mount Point -->
+          <div id="monaco-editor" class="monaco-container"></div>
+        </div>
+
+        <!-- Horizontal Resizer Divider -->
+        <div id="console-resizer" class="horizontal-resizer" title="Drag to resize console"></div>
+
+        <!-- Bottom Console Panel -->
+        <div class="console-panel">
+          <div class="console-header">
+            <div class="console-tabs">
+              <button class="console-tab-btn active" data-tab="input">
+                Custom Stdin
+              </button>
+              <button class="console-tab-btn" data-tab="output">
+                Output
+              </button>
+              <button class="console-tab-btn" data-tab="errors">
+                Errors <span id="error-tab-badge" class="tab-badge" style="display:none;">0</span>
+              </button>
+            </div>
+
+            <div class="console-meta-actions">
+              <!-- Execution Badges -->
+              <span id="execution-status-badge" class="status-badge" style="display:none;"></span>
+              <span id="execution-time-pill" class="stat-pill" style="display:none;"></span>
+              <span id="execution-exit-pill" class="stat-pill" style="display:none;"></span>
+
+              <!-- Clear Buttons -->
+              <button id="btn-clear-stdin" class="btn btn-ghost btn-sm" title="Clear standard input">
+                Clear Input
+              </button>
+              <button id="btn-clear-output" class="btn btn-ghost btn-sm" title="Clear console results">
+                Clear Output
+              </button>
+            </div>
+          </div>
+
+          <div class="console-content-wrap">
+            <!-- Input Tab -->
+            <div id="tab-input" class="console-tab-content active">
+              <textarea
+                id="stdin-input"
+                class="console-textarea"
+                placeholder="Enter custom input (stdin) for your program here...&#10;If your program expects input, provide each value on a new line."
+                spellcheck="false"
+              ></textarea>
+            </div>
+
+            <!-- Output Tab -->
+            <div id="tab-output" class="console-tab-content">
+              <div id="stdout-content" style="height:100%; display:flex; flex-direction:column;">
+                <div class="empty-state">
+                  <div class="empty-icon">▶</div>
+                  <p>No execution results yet.</p>
+                  <p style="font-size:12px;opacity:0.8;">Click <strong>Run</strong> or press <kbd class="shortcut-kbd">Ctrl</kbd> + <kbd class="shortcut-kbd">Enter</kbd> to compile and execute.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Errors Tab -->
+            <div id="tab-errors" class="console-tab-content">
+              <div id="stderr-content" style="height:100%; display:flex; flex-direction:column;">
+                <div class="empty-state">
+                  <p>No compilation or runtime errors.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Editor Settings Modal -->
+    <div id="modal-editor-settings" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 class="modal-title">Editor Preferences</h3>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label for="pref-font-size" class="form-label">Font Size</label>
+            <select id="pref-font-size" class="form-control-select">
+              <option value="12">12 px</option>
+              <option value="13">13 px</option>
+              <option value="14" selected>14 px (Default)</option>
+              <option value="16">16 px</option>
+              <option value="18">18 px</option>
+              <option value="20">20 px</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pref-tab-size" class="form-label">Tab Size</label>
+            <select id="pref-tab-size" class="form-control-select">
+              <option value="2">2 spaces</option>
+              <option value="4" selected>4 spaces</option>
+              <option value="8">8 spaces</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pref-word-wrap" class="form-label">Word Wrap</label>
+            <select id="pref-word-wrap" class="form-control-select">
+              <option value="on" selected>On</option>
+              <option value="off">Off</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pref-minimap" class="form-label">Code Minimap</label>
+            <select id="pref-minimap" class="form-control-select">
+              <option value="false" selected>Hidden</option>
+              <option value="true">Visible</option>
+            </select>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-cancel-settings" class="btn btn-secondary btn-sm">Cancel</button>
+          <button id="btn-save-settings" class="btn btn-primary btn-sm">Save Preferences</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Clear Code Confirmation Modal -->
+    <div id="modal-clear-confirm" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 class="modal-title">Reset Code to Default</h3>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:13px; color:var(--text-secondary);">
+            Are you sure you want to reset the current editor buffer to its starter template? Any unsaved edits in this language will be overwritten.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-cancel-clear" class="btn btn-secondary btn-sm">Cancel</button>
+          <button id="btn-confirm-clear" class="btn btn-danger btn-sm">Reset Code</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/js/app.js"></script>
+</body>
+</html>

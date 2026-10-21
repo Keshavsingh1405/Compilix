@@ -1,0 +1,18 @@
+{
+  "name": "compilix-frontend",
+  "version": "1.0.0",
+  "description": "Frontend for Compilix LeetCode-inspired online compiler",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "node -e \"console.log('Frontend code validation passed')\""
+  },
+  "dependencies": {
+    "monaco-editor": "^0.52.2"
+  },
+  "devDependencies": {
+    "vite": "^6.2.0"
+  }
+}

@@ -1,0 +1,66 @@
+/* Responsive Layout Styles */
+
+@media (max-width: 1024px) {
+  .workspace-sidebar {
+    width: 220px;
+  }
+}
+
+@media (max-width: 768px) {
+  .top-nav {
+    padding: 0 10px;
+    height: auto;
+    min-height: var(--header-height);
+    flex-wrap: wrap;
+    gap: 8px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .nav-brand-group {
+    order: 1;
+  }
+
+  .nav-actions-group {
+    order: 2;
+  }
+
+  .nav-center-group {
+    order: 3;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .main-workspace {
+    flex-direction: column;
+  }
+
+  .workspace-sidebar {
+    display: none; /* Hide sidebar on mobile to prioritize editor */
+  }
+
+  .console-panel {
+    height: 240px;
+    min-height: 140px;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand-name {
+    font-size: 15px;
+  }
+
+  .brand-badge {
+    display: none;
+  }
+
+  .btn {
+    padding: 5px 10px;
+    font-size: 12px;
+  }
+
+  .console-tab-btn {
+    padding: 0 8px;
+    font-size: 11px;
+  }
+}

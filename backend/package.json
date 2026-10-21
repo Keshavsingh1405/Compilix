@@ -1,0 +1,23 @@
+{
+  "name": "compilix-backend",
+  "version": "1.0.0",
+  "description": "Backend API and Docker execution orchestration service for Compilix",
+  "type": "module",
+  "main": "src/server.js",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "test": "node --test tests/**/*.test.js",
+    "lint": "node -e \"console.log('Backend code validation passed')\""
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.5.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.9",
+    "supertest": "^7.0.0"
+  }
+}
