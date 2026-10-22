@@ -15,9 +15,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const tempBaseDir = path.resolve(__dirname, '../../temp');
 
-// Ensure base temp directory exists
+// Ensure base temp directory exists with world-writable permissions for container runners
 if (!fs.existsSync(tempBaseDir)) {
   fs.mkdirSync(tempBaseDir, { recursive: true });
+}
+try {
+  fs.chmodSync(tempBaseDir, 0o777);
+} catch {
+  // Ignore filesystem permission errors (e.g. Windows NTFS)
 }
 
 const SIGNAL_NAMES = {
@@ -144,8 +149,13 @@ export async function executeInDocker({ language, code, stdin = '', filename }) 
   let totalOutputBytes = 0;
 
   try {
-    // 1. Create isolated temporary directory
+    // 1. Create isolated temporary directory with world-writable permissions
     await fs.promises.mkdir(runDir, { recursive: true });
+    try {
+      await fs.promises.chmod(runDir, 0o777);
+    } catch {
+      // Ignore on filesystems where POSIX chmod is unsupported
+    }
 
     // 2. Write source file and input file using specified or default filename
     const targetFilename = filename || runner.filename;
@@ -154,6 +164,12 @@ export async function executeInDocker({ language, code, stdin = '', filename }) 
 
     await fs.promises.writeFile(sourceFilePath, code, 'utf-8');
     await fs.promises.writeFile(inputFilePath, stdin || '', 'utf-8');
+    try {
+      await fs.promises.chmod(sourceFilePath, 0o666);
+      await fs.promises.chmod(inputFilePath, 0o666);
+    } catch {
+      // Ignore
+    }
 
     // 3. Build Docker run arguments
     const dockerArgs = [

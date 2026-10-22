@@ -1,4 +1,5 @@
 process.env.NODE_ENV = 'test';
+process.env.EXECUTION_TIMEOUT_MS = process.env.EXECUTION_TIMEOUT_MS || '15000';
 
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

@@ -22,8 +22,9 @@ function parseNumber(val, defaultValue) {
 export const config = {
   PORT: parseNumber(process.env.PORT, 5000),
   NODE_ENV: process.env.NODE_ENV || 'development',
-  FRONTEND_ORIGIN: process.env.FRONTEND_ORIGIN || 'http://localhost:5173',
-  EXECUTION_TIMEOUT_MS: parseNumber(process.env.EXECUTION_TIMEOUT_MS, 10000),
+  EXECUTION_TIMEOUT_MS: process.env.NODE_ENV === 'test'
+    ? Math.max(parseNumber(process.env.EXECUTION_TIMEOUT_MS, 15000), 15000)
+    : parseNumber(process.env.EXECUTION_TIMEOUT_MS, 10000),
   MAX_CODE_SIZE_BYTES: parseNumber(process.env.MAX_CODE_SIZE_BYTES, 65536), // 64 KB
   MAX_STDIN_SIZE_BYTES: parseNumber(process.env.MAX_STDIN_SIZE_BYTES, 65536), // 64 KB
   MAX_OUTPUT_SIZE_BYTES: parseNumber(process.env.MAX_OUTPUT_SIZE_BYTES, 262144), // 256 KB

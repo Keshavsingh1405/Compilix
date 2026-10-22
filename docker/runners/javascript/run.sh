@@ -1,5 +1,6 @@
 #!/bin/sh
 set -e
+umask 0000
 
 cd /workspace
 
