@@ -63,4 +63,12 @@
     padding: 0 8px;
     font-size: 11px;
   }
+
+  .file-tabs-scroll-wrap {
+    max-width: calc(100% - 90px);
+  }
+
+  .tab-filename {
+    max-width: 80px;
+  }
 }

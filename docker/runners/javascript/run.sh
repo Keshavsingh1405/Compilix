@@ -3,14 +3,19 @@ set -e
 
 cd /workspace
 
-if [ ! -f main.js ]; then
-  echo "Error: main.js not found" >&2
+ENTRY="${ENTRY_FILE:-}"
+if [ -z "$ENTRY" ]; then
+  ENTRY=$(ls *.js *.mjs 2>/dev/null | head -n 1)
+fi
+
+if [ -z "$ENTRY" ] || [ ! -f "$ENTRY" ]; then
+  echo "Error: No JavaScript source file found in /workspace" >&2
   exit 1
 fi
 
 # Execute JavaScript with Node.js
 if [ -f input.txt ]; then
-  node main.js < input.txt
+  exec node "$ENTRY" < input.txt
 else
-  node main.js
+  exec node "$ENTRY"
 fi

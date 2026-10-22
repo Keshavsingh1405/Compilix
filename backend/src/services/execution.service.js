@@ -4,7 +4,7 @@
 
 import { executeInDocker } from './docker.service.js';
 
-export async function executeCode({ language, code, stdin }) {
-  const result = await executeInDocker({ language, code, stdin });
+export async function executeCode({ language, code, stdin, filename }) {
+  const result = await executeInDocker({ language, code, stdin, filename });
   return result;
 }

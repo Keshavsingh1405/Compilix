@@ -5,10 +5,13 @@ node_modules/
 
 # Environment variables
 .env
+.env.*
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
+!**/.env.example
 
 # Build outputs
 dist/
@@ -19,6 +22,7 @@ out/
 # Temporary execution workspaces
 temp/
 backend/temp/
+**/temp/
 *.tmp
 
 # Logs

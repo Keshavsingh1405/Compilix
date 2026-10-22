@@ -20,6 +20,22 @@ if (!fs.existsSync(tempBaseDir)) {
   fs.mkdirSync(tempBaseDir, { recursive: true });
 }
 
+const SIGNAL_NAMES = {
+  1: 'SIGHUP (Hangup)',
+  2: 'SIGINT (Interrupt)',
+  3: 'SIGQUIT (Quit)',
+  4: 'SIGILL (Illegal instruction)',
+  6: 'SIGABRT (Process aborted)',
+  8: 'SIGFPE (Floating-point / arithmetic exception)',
+  9: 'SIGKILL (Killed)',
+  11: 'SIGSEGV (Segmentation fault / invalid memory access)',
+  13: 'SIGPIPE (Broken pipe)',
+  14: 'SIGALRM (Alarm clock)',
+  15: 'SIGTERM (Termination request)',
+  24: 'SIGXCPU (CPU time limit exceeded)',
+  25: 'SIGXFSZ (File size limit exceeded)'
+};
+
 export const RUNNER_CONFIG = {
   cpp: {
     image: 'compilix-runner-cpp',
@@ -95,7 +111,7 @@ export function getAvailableRunnerImages() {
 /**
  * Execute user-submitted code in an isolated Docker container
  */
-export async function executeInDocker({ language, code, stdin = '' }) {
+export async function executeInDocker({ language, code, stdin = '', filename }) {
   if (!isDockerAvailable()) {
     throw new DockerUnavailableError(
       'Docker execution engine is currently offline or unreachable. Please verify the Docker daemon is running.'
@@ -131,8 +147,9 @@ export async function executeInDocker({ language, code, stdin = '' }) {
     // 1. Create isolated temporary directory
     await fs.promises.mkdir(runDir, { recursive: true });
 
-    // 2. Write source file and input file
-    const sourceFilePath = path.join(runDir, runner.filename);
+    // 2. Write source file and input file using specified or default filename
+    const targetFilename = filename || runner.filename;
+    const sourceFilePath = path.join(runDir, targetFilename);
     const inputFilePath = path.join(runDir, 'input.txt');
 
     await fs.promises.writeFile(sourceFilePath, code, 'utf-8');
@@ -150,6 +167,7 @@ export async function executeInDocker({ language, code, stdin = '' }) {
       '--pids-limit', String(config.DOCKER_PIDS_LIMIT),
       '--cap-drop', 'ALL',
       '--security-opt', 'no-new-privileges',
+      '-e', `ENTRY_FILE=${targetFilename}`,
       '-v', `${runDir}:/workspace`,
       runner.image
     ];
@@ -209,7 +227,7 @@ export async function executeInDocker({ language, code, stdin = '' }) {
       });
     });
 
-    // 5. Determine execution status
+    // 5. Determine execution status accurately
     let status = 'success';
     let isSuccess = true;
 
@@ -222,11 +240,24 @@ export async function executeInDocker({ language, code, stdin = '' }) {
       isSuccess = false;
       stderr = `Output limit exceeded (maximum ${config.MAX_OUTPUT_SIZE_BYTES} bytes). Process terminated.`;
     } else if (result.exitCode === 42) {
-      // Exit code 42 is returned by runner scripts when compilation fails
+      // Exit code 42 is returned by runner scripts when compilation fails (C++, Java)
       status = 'compilation_error';
       isSuccess = false;
     } else if (result.exitCode !== 0) {
-      status = 'runtime_error';
+      // Categorize syntax/compilation errors vs runtime errors for interpreted languages
+      if (
+        (language === 'python' && /(SyntaxError:|IndentationError:|TabError:)/.test(stderr)) ||
+        (language === 'javascript' && /(SyntaxError:)/.test(stderr))
+      ) {
+        status = 'compilation_error';
+      } else {
+        status = 'runtime_error';
+        if (result.exitCode > 128 && !stderr.trim()) {
+          const sig = result.exitCode - 128;
+          const sigDesc = SIGNAL_NAMES[sig] || `Signal ${sig}`;
+          stderr = `Runtime Error: Process terminated by signal ${sig} (${sigDesc}). Exit code: ${result.exitCode}.`;
+        }
+      }
       isSuccess = false;
     }
 

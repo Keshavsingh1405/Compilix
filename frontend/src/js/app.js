@@ -9,9 +9,10 @@ import '../styles/components.css';
 import '../styles/responsive.css';
 
 import { initTheme } from './theme.js';
+import { initFilesStore, getActiveFile, getFiles } from './files.js';
 import { initEditor, getEditorCode, onCodeChange, onStatsChange, layoutEditor } from './editor.js';
 import { initConsole, getCustomStdin, showExecutionLoading, renderExecutionResult } from './input-output.js';
-import { initUI, getSelectedLanguageId, updateSaveStatus, updateCursorStats } from './ui.js';
+import { initUI, updateSaveStatus, updateCursorStats, showToast, openCreateFileModal } from './ui.js';
 import { fetchLanguages, executeCode } from './api.js';
 import { setLanguages } from './language.js';
 
@@ -20,28 +21,33 @@ let saveDebounceTimer = null;
 
 async function bootstrap() {
   // 1. Fetch backend language metadata if available
-  const serverLanguages = await fetchLanguages();
-  if (serverLanguages && serverLanguages.languages) {
-    setLanguages(serverLanguages.languages);
+  try {
+    const serverLanguages = await fetchLanguages();
+    if (serverLanguages && serverLanguages.languages) {
+      setLanguages(serverLanguages.languages);
+    }
+  } catch (err) {
+    console.warn('Could not fetch server language definitions, using defaults:', err);
   }
 
   // 2. Initialize Theme (dark/light)
   initTheme();
 
-  // 3. Initialize UI elements and modals
+  // 3. Initialize File Store (loads LocalStorage or sets defaults)
+  const { files, activeFile } = initFilesStore();
+
+  // 4. Initialize UI elements, file tabs, and modals
   initUI({
     onLanguageChange: () => {
       updateSaveStatus(true);
     }
   });
 
-  // 4. Initialize Monaco Editor
+  // 5. Initialize Monaco Editor with all files and set active model
   const editorContainer = document.getElementById('monaco-editor');
-  const initialLanguage = getSelectedLanguageId();
+  initEditor(editorContainer, activeFile, files, handleRunCode);
 
-  initEditor(editorContainer, initialLanguage, handleRunCode);
-
-  // 5. Connect Editor Event Listeners
+  // 6. Connect Editor Event Listeners
   onCodeChange(() => {
     updateSaveStatus(false);
     clearTimeout(saveDebounceTimer);
@@ -54,25 +60,33 @@ async function bootstrap() {
     updateCursorStats(stats);
   });
 
-  // 6. Initialize Console Panel (tabs, stdin, resizer)
+  // 7. Initialize Console Panel (tabs, stdin, resizer)
   initConsole();
 
-  // 7. Bind Run Code Button
+  // 8. Bind Run Code Button
   const runBtn = document.getElementById('btn-run-code');
   if (runBtn) {
     runBtn.addEventListener('click', handleRunCode);
   }
 
-  // 8. Handle global keyboard shortcuts
+  // 9. Handle global keyboard shortcuts
   window.addEventListener('keydown', (e) => {
     // Ctrl+S / Cmd+S -> Save
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
       e.preventDefault();
       updateSaveStatus(true);
+      showToast('All changes saved locally', 'info');
+    }
+
+    // Alt+N or Ctrl+Alt+N -> Open Create File modal
+    if ((e.altKey && e.key.toLowerCase() === 'n') || (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'n')) {
+      e.preventDefault();
+      const current = getActiveFile();
+      openCreateFileModal(current ? current.languageId : 'cpp');
     }
   });
 
-  // 9. Resize listener for editor
+  // 10. Resize listener for editor
   window.addEventListener('resize', () => {
     layoutEditor();
   });
@@ -81,16 +95,22 @@ async function bootstrap() {
 async function handleRunCode() {
   if (isExecuting) return; // Prevent concurrent double executions
 
+  const activeFile = getActiveFile();
+  if (!activeFile) {
+    showToast('No active file open. Please create a file to run code.', 'error');
+    return;
+  }
+
   const runBtn = document.getElementById('btn-run-code');
   const runBtnText = document.getElementById('btn-run-text');
   const runBtnSpinner = document.getElementById('btn-run-spinner');
 
-  const language = getSelectedLanguageId();
-  const code = getEditorCode();
+  const language = activeFile.languageId;
+  const rawCode = getEditorCode();
   const stdin = getCustomStdin();
 
-  if (!code || !code.trim()) {
-    alert('Please enter some code to execute.');
+  if (!rawCode || !rawCode.trim()) {
+    showToast('Please enter some code to execute.', 'error');
     return;
   }
 
@@ -102,7 +122,13 @@ async function handleRunCode() {
 
     showExecutionLoading();
 
-    const result = await executeCode({ language, code, stdin });
+    const result = await executeCode({
+      language,
+      code: rawCode,
+      stdin,
+      filename: activeFile.name
+    });
+
     renderExecutionResult(result);
   } catch (error) {
     renderExecutionResult({

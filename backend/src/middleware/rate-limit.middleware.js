@@ -10,6 +10,7 @@ export const apiLimiter = rateLimit({
   max: 200, // limit each IP to 200 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
   message: {
     success: false,
     error: {
@@ -25,6 +26,7 @@ export const executionLimiter = rateLimit({
   max: 30, // limit each IP to 30 executions per minute
   standardHeaders: true,
   legacyHeaders: false,
+  skip: () => process.env.NODE_ENV === 'test',
   message: {
     success: false,
     error: {

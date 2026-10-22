@@ -139,13 +139,29 @@
         <!-- Editor Section -->
         <div class="editor-section">
           <div class="editor-toolbar">
-            <div class="file-tab">
-              <span>📄</span>
-              <span id="current-file-label">main.cpp</span>
+            <div class="file-tabs-scroll-wrap">
+              <div id="file-tabs-list" class="file-tabs-list" role="tablist" aria-label="Open Files">
+                <!-- Dynamically populated by ui.js -->
+              </div>
+              <button id="btn-add-file" class="btn-tab-add" title="Create new file (+)" aria-label="Create new file">
+                +
+              </button>
             </div>
             <div class="editor-actions">
-              <button id="btn-clear-code" class="btn btn-ghost btn-sm" title="Reset code to starter template">
-                ↺ Clear Code
+              <button id="btn-clear-code" class="btn btn-ghost btn-sm" title="Reset current file to starter template">
+                ↺ Reset File
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty Editor State (displayed when 0 files open) -->
+          <div id="empty-editor-state" class="empty-editor-overlay" style="display:none;">
+            <div class="empty-state-content">
+              <div class="empty-state-icon">📁</div>
+              <h3 class="empty-state-title">No Files Open</h3>
+              <p class="empty-state-desc">Your workspace has no open files. Create a new file to start coding.</p>
+              <button id="btn-empty-create-file" class="btn btn-primary btn-sm">
+                + Create New File
               </button>
             </div>
           </div>
@@ -281,13 +297,70 @@
           <h3 class="modal-title">Reset Code to Default</h3>
         </div>
         <div class="modal-body">
-          <p style="font-size:13px; color:var(--text-secondary);">
-            Are you sure you want to reset the current editor buffer to its starter template? Any unsaved edits in this language will be overwritten.
+          <p style="font-size:13px; color:var(--text-secondary); line-height: 1.5;">
+            Are you sure you want to reset <strong id="clear-file-name-label" style="color:var(--text-primary);">this file</strong> to its starter template? Any unsaved edits will be overwritten.
           </p>
         </div>
         <div class="modal-footer">
           <button id="btn-cancel-clear" class="btn btn-secondary btn-sm">Cancel</button>
           <button id="btn-confirm-clear" class="btn btn-danger btn-sm">Reset Code</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Create New File Modal -->
+    <div id="modal-create-file" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 class="modal-title">Create New File</h3>
+        </div>
+        <div class="modal-body">
+          <div class="form-group-col">
+            <label for="modal-new-file-lang" class="form-label">Language</label>
+            <select id="modal-new-file-lang" class="form-control-select form-control-full">
+              <option value="cpp">C++ (GCC 14 / C++17)</option>
+              <option value="java">Java (OpenJDK 21)</option>
+              <option value="python">Python (Python 3.12)</option>
+              <option value="javascript">JavaScript (Node.js 22)</option>
+            </select>
+          </div>
+
+          <div class="form-group-col">
+            <label for="modal-new-file-name" class="form-label">File Name</label>
+            <input
+              type="text"
+              id="modal-new-file-name"
+              class="form-control-input"
+              placeholder="e.g. solution.cpp"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <span id="modal-new-file-hint" class="form-input-hint">Default extension: .cpp</span>
+            <div id="modal-new-file-error" class="modal-error-alert" style="display:none;"></div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-cancel-create-file" class="btn btn-secondary btn-sm">Cancel</button>
+          <button id="btn-confirm-create-file" class="btn btn-primary btn-sm">Create File</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Delete File Confirmation Modal -->
+    <div id="modal-delete-confirm" class="modal-overlay">
+      <div class="modal-dialog">
+        <div class="modal-header">
+          <h3 class="modal-title">Delete File</h3>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:13px; color:var(--text-secondary); line-height: 1.5;">
+            Are you sure you want to delete <strong id="delete-file-name-label" style="color:var(--text-primary);"></strong>?
+            This file and its contents will be permanently removed.
+          </p>
+        </div>
+        <div class="modal-footer">
+          <button id="btn-cancel-delete" class="btn btn-secondary btn-sm">Cancel</button>
+          <button id="btn-confirm-delete" class="btn btn-danger btn-sm">Delete File</button>
         </div>
       </div>
     </div>

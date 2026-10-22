@@ -15,15 +15,25 @@ import executionRoutes from './routes/execution.routes.js';
 const app = express();
 
 // Security and CORS configuration
+const allowedOrigins = new Set([
+  config.FRONTEND_ORIGIN,
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+]);
+
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, postman) or matching FRONTEND_ORIGIN
-    if (!origin || origin === config.FRONTEND_ORIGIN || config.NODE_ENV !== 'production') {
+    // Allow requests with no origin (like mobile apps, curl, postman) or matching allowed origins
+    if (!origin || allowedOrigins.has(origin) || config.NODE_ENV !== 'production') {
       return callback(null, true);
     }
     return callback(new Error(`CORS blocked for origin: ${origin}`));
   },
-  credentials: true
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 // Body parsing with size guards

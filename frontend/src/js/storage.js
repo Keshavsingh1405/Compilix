@@ -7,7 +7,9 @@ const STORAGE_KEYS = {
   THEME: 'compilix_theme',
   STDIN: 'compilix_stdin',
   EDITOR_PREFS: 'compilix_editor_prefs',
-  CODE_PREFIX: 'compilix_code_'
+  CODE_PREFIX: 'compilix_code_',
+  FILES: 'compilix_files',
+  ACTIVE_FILE_ID: 'compilix_active_file_id'
 };
 
 export const defaultEditorPrefs = {
@@ -80,5 +82,48 @@ export function saveEditorPrefs(prefs) {
     localStorage.setItem(STORAGE_KEYS.EDITOR_PREFS, JSON.stringify(prefs));
   } catch (err) {
     console.warn('Could not save editor preferences:', err);
+  }
+}
+
+export function getSavedFiles() {
+  try {
+    const json = localStorage.getItem(STORAGE_KEYS.FILES);
+    if (!json) return null;
+    const parsed = JSON.parse(json);
+    if (Array.isArray(parsed)) {
+      // Validate array elements
+      const validFiles = parsed.filter(
+        (f) => f && typeof f.id === 'string' && typeof f.name === 'string' && typeof f.languageId === 'string'
+      );
+      return validFiles;
+    }
+    return null;
+  } catch (err) {
+    console.warn('Could not parse stored files JSON, resetting to null:', err);
+    return null;
+  }
+}
+
+export function saveFiles(files) {
+  try {
+    localStorage.setItem(STORAGE_KEYS.FILES, JSON.stringify(files));
+  } catch (err) {
+    console.warn('Could not save files to LocalStorage:', err);
+  }
+}
+
+export function getSavedActiveFileId() {
+  return getStoredItem(STORAGE_KEYS.ACTIVE_FILE_ID, null);
+}
+
+export function saveActiveFileId(fileId) {
+  if (fileId) {
+    setStoredItem(STORAGE_KEYS.ACTIVE_FILE_ID, fileId);
+  } else {
+    try {
+      localStorage.removeItem(STORAGE_KEYS.ACTIVE_FILE_ID);
+    } catch {
+      // Ignore removal error
+    }
   }
 }
